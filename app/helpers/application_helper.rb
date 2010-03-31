@@ -215,26 +215,19 @@ module ApplicationHelper
   #TODO: wow... this method should be cleaned up
   def medium_thumb_partial(taxon, image_id_name = '', new_window = false)
     return_html = ''
-    unless taxon.nil? or taxon.smart_medium_thumb.nil? or taxon.name.nil? 
-      name = sanitize(strip_tags(taxon.name(current_user.expertise)))
-      return_html = %Q{<a}
-      return_html+= %Q{ target=\"_blank\" } if new_window
-      return_html+= %Q{ id="#{image_id_name}_href"}       unless image_id_name == ''           
-      return_html+= %Q{ href="/pages/#{taxon.respond_to?(:taxon_concept_id) ? taxon.taxon_concept_id : taxon.id}"><img}
-      return_html+= %Q{ id="#{image_id_name}"}            unless image_id_name == ''
+    return return_html if taxon.nil? or taxon.name.nil?
+    name = sanitize(strip_tags(taxon.name(current_user.expertise)))
+    return_html = %Q{<a}
+    return_html+= %Q{ target=\"_blank\" } if new_window
+    return_html+= %Q{ id="#{image_id_name}_href"}       unless image_id_name == ''
+    return_html+= %Q{ href="/pages/#{taxon.respond_to?(:taxon_concept_id) ? taxon.taxon_concept_id : taxon.id}"><img}
+    return_html+= %Q{ id="#{image_id_name}"}            unless image_id_name == ''
+    unless taxon.smart_medium_thumb.nil?
       return_html+= %Q{ src="#{taxon.smart_medium_thumb}" alt="#{name}"}
-      return_html+= %Q{ title="#{name}"/></a>}
-    end
-    if !taxon.nil? && taxon.smart_medium_thumb.nil? && !taxon.name.nil?
-      name = sanitize(strip_tags(taxon.name(current_user.expertise)))
-      return_html = %Q{<a}
-      return_html+= %Q{ target=\"_blank\" } if new_window
-      return_html+= %Q{ id="#{image_id_name}_href"}       unless image_id_name == ''
-      return_html+= %Q{ href="/pages/#{taxon.respond_to?(:taxon_concept_id) ? taxon.taxon_concept_id : taxon.id}"><img}
-      return_html+= %Q{ id="#{image_id_name}"}            unless image_id_name == ''
+    else
       return_html+= %Q{ src="/images/eol_logo_gray.gif" alt="#{name}"}
-      return_html+= %Q{ title="#{name}"/></a>}
     end
+    return_html+= %Q{ title="#{name}"/></a>}
     return return_html
   end
   
