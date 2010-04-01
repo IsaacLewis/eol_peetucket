@@ -341,9 +341,9 @@ class TaxonConcept < SpeciesSchemaModel
     return videos.length > $MAX_IMAGES_PER_PAGE.to_i # This is expensive.  I hope you called #videos first!
   end
 
-  def videos
-    videos = DataObject.for_taxon(self, :video, :agent => @current_agent, :user => current_user)
-    @length_of_videos = videos.length # cached, so we don't have to query this again.
+  def videos(options={})
+    videos = DataObject.for_taxon(self, :video, :agent => @current_agent, :user => current_user, :return_count_only => options[:return_count_only])
+    @length_of_videos = options[:return_count_only] ? videos : videos.length # cached, so we don't have to query this again.
     return videos
   end 
 
@@ -768,7 +768,7 @@ EOIUCNSQL
     hierarchy ||= Hierarchy.default
     subtitle = quick_common_name(nil, hierarchy)
     subtitle = quick_scientific_name(:canonical, hierarchy) if subtitle.empty?
-    subtitle = "<i>#{subtitle}</i>" unless subtitle.empty? or subtitle =~ # /<i>/
+    subtitle = "<i>#{subtitle}</i>" unless subtitle.empty? or subtitle =~ /<i>/
     @subtitle = subtitle.empty? ? name() : subtitle
   end
 
@@ -853,7 +853,7 @@ EOIUCNSQL
     if options[:full]
       options[:methods] ||= [:canonical_form, :iucn_conservation_status, :scientific_name]
       default_block = lambda do |xml|
-
+=begin
         # Using tag! here because hyphens are not legal ruby identifiers.
         xml.tag!('common-names') do
           all_common_names.each do |cn|
@@ -885,10 +885,10 @@ EOIUCNSQL
 
         # There are potentially lots and lots of these, so let's just count them and let the user grab what they want:
 
-
+=end
         xml.comments { xml.count comments.size.to_s }
         xml.images   { xml.count images(:return_count_only => true).to_s }
-        xml.videos   { xml.count((@length_of_videos || videos.length).to_s) }
+        xml.videos   { xml.count videos(:return_count_only => true).to_s }
 
       end
     end

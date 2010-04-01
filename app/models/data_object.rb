@@ -770,15 +770,9 @@ class DataObject < SpeciesSchemaModel
     else
       from_cp = ', NULL agent_id'
     end
-    
-    if options[:return_count_only]
-      fields = "COUNT(*)"
-    else
-      fields = "dato.id, dato.visibility_id, dato.data_rating, dato.vetted_id, v.view_order vetted_view_order #{from_cp}"
-    end
 
     query_string = %Q{
-      SELECT #{fields}
+      SELECT dato.id, dato.visibility_id, dato.data_rating, dato.vetted_id, v.view_order vetted_view_order #{from_cp}
         FROM #{from_table} ti
           JOIN data_objects dato      ON ti.data_object_id = dato.id
           JOIN vetted v               ON dato.vetted_id = v.id
@@ -814,6 +808,7 @@ class DataObject < SpeciesSchemaModel
     #   end
     # else
     if options[:return_count_only]
+      top_images_query = "SELECT COUNT(*) FROM (#{top_images_query}) AS subquery_table"
       return DataObject.count_by_sql(top_images_query)
     else
       result = DataObject.find_by_sql(top_images_query)
@@ -1049,7 +1044,12 @@ class DataObject < SpeciesSchemaModel
     # generate the query to search for data objects
     query = DataObject.build_query(taxon, type, options)
     # load the objects and the info we need to sort them
-    result = DataObject.find_by_sql(query)
+    if options[:return_count_only]
+      query = "SELECT COUNT(*) FROM (#{query}) AS subquery_table"
+      return DataObject.count_by_sql(query)
+    else
+      result = DataObject.find_by_sql(query)
+    end
     result = result.uniq
     
     # sort objects by vetted order ASC (so trusted are first), rating DESC (so best are first), id DESC (so newest are first)
