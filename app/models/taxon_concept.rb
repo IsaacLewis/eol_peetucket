@@ -853,7 +853,7 @@ EOIUCNSQL
     if options[:full]
       options[:methods] ||= [:canonical_form, :iucn_conservation_status, :scientific_name]
       default_block = lambda do |xml|
-=begin
+
         # Using tag! here because hyphens are not legal ruby identifiers.
         xml.tag!('common-names') do
           all_common_names.each do |cn|
@@ -885,7 +885,6 @@ EOIUCNSQL
 
         # There are potentially lots and lots of these, so let's just count them and let the user grab what they want:
 
-=end
         xml.comments { xml.count comments.size.to_s }
         xml.images   { xml.count images(:return_count_only => true).to_s }
         xml.videos   { xml.count videos(:return_count_only => true).to_s }
