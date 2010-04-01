@@ -771,8 +771,14 @@ class DataObject < SpeciesSchemaModel
       from_cp = ', NULL agent_id'
     end
     
+    if options[:return_count_only]
+      fields = "COUNT(*)"
+    else
+      fields = "dato.id, dato.visibility_id, dato.data_rating, dato.vetted_id, v.view_order vetted_view_order #{from_cp}"
+    end
+
     query_string = %Q{
-      SELECT dato.id, dato.visibility_id, dato.data_rating, dato.vetted_id, v.view_order vetted_view_order #{from_cp}
+      SELECT #{fields}
         FROM #{from_table} ti
           JOIN data_objects dato      ON ti.data_object_id = dato.id
           JOIN vetted v               ON dato.vetted_id = v.id
@@ -807,11 +813,16 @@ class DataObject < SpeciesSchemaModel
     #     result = DataObject.find_by_sql(top_images_query)
     #   end
     # else
+    if options[:return_count_only]
+      return DataObject.count_by_sql(top_images_query)
+    else
       result = DataObject.find_by_sql(top_images_query)
+    end
     # end
     
     # when we have all the images then get the uniquq list and sort them by
     # vetted order ASC (so trusted are first), rating DESC (so best are first), id DESC (so newest are first)
+
     result = result.uniq
     result.sort! do |a, b|
       if a.vetted_view_order == b.vetted_view_order
@@ -1014,6 +1025,7 @@ class DataObject < SpeciesSchemaModel
       end
     end
 
+    return results if options[:return_count_only]
     # In order to display a warning about pages that include unvetted material, we check now, while the
     # information is most readily available (data objects are the only things that can be unvetted, and only
     # if we have to check permissions), and then flag the taxon_concept model if anything is non-trusted.

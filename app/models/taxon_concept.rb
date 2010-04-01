@@ -739,10 +739,17 @@ EOIUCNSQL
     perform_filter =  !filter_hierarchy.nil?
     
     image_page = (options[:image_page] ||= 1).to_i
-    images ||= DataObject.for_taxon(self, :image, :user => self.current_user, :agent => @current_agent, :filter_by_hierarchy => perform_filter, :hierarchy => filter_hierarchy, :image_page => image_page)
-    @length_of_images = images.length # Caching this because the call to #images is expensive and we don't want to do it twice.
+    images ||= DataObject.for_taxon(self, :image, 
+                                    :user => self.current_user, 
+                                    :agent => @current_agent, 
+                                    :filter_by_hierarchy => perform_filter, 
+                                    :hierarchy => filter_hierarchy, 
+                                    :image_page => image_page, 
+                                    :return_count_only => options[:return_count_only])
+
+    # Caching this because the call to #images is expensive and we don't want to do it twice.
+    @length_of_images = options[:return_count_only] ? images : images.length 
     
-    #puts "this is the end of TaxonConcept.images"
     return images
   end
 
@@ -761,7 +768,7 @@ EOIUCNSQL
     hierarchy ||= Hierarchy.default
     subtitle = quick_common_name(nil, hierarchy)
     subtitle = quick_scientific_name(:canonical, hierarchy) if subtitle.empty?
-    subtitle = "<i>#{subtitle}</i>" unless subtitle.empty? or subtitle =~ /<i>/
+    subtitle = "<i>#{subtitle}</i>" unless subtitle.empty? or subtitle =~ # /<i>/
     @subtitle = subtitle.empty? ? name() : subtitle
   end
 
@@ -871,14 +878,17 @@ EOIUCNSQL
 
         # Careful!  We're doing TaxonConcepts, here, so we don't want recursion.
         xml.ancestors { ancestors.each { |a| a.to_xml(:builder => xml, :skip_instruct => true) } }
+
         # Careful!  We're doing TaxonConcepts, here, too, so we don't want recursion.
         xml.children { children.each { |a| a.to_xml(:builder => xml, :skip_instruct => true) } }
         xml.curators { curators.each {|c| c.to_xml(:builder => xml, :skip_instruct => true)} }
 
         # There are potentially lots and lots of these, so let's just count them and let the user grab what they want:
-        xml.comments { xml.count comments.length.to_s }
-        xml.images   { xml.count images.length.to_s }
-        xml.videos   { xml.count videos.length.to_s }
+
+
+        xml.comments { xml.count comments.size.to_s }
+        xml.images   { xml.count images(:return_count_only => true).to_s }
+        xml.videos   { xml.count((@length_of_videos || videos.length).to_s) }
 
       end
     end
